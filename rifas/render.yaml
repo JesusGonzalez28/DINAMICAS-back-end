@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: rifas-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/main.js
+    plan: free
