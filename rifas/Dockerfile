@@ -2,17 +2,26 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copiar package files
-COPY package*.json ./
+# Instalar pnpm
+RUN npm install -g pnpm
 
-# Instalar dependencias
-RUN npm install --legacy-peer-deps
+# Copiar package files
+COPY package.json pnpm-lock.yaml ./
+
+# Instalar TODAS las dependencias incluyendo devDependencies
+RUN pnpm install --frozen-lockfile
 
 # Copiar código fuente
 COPY . .
 
+# Ver qué hay antes del build
+RUN ls -la
+
 # Compilar TypeScript
-RUN npm run build
+RUN pnpm run build
+
+# Ver qué generó el build
+RUN ls -la dist/
 
 # Crear carpeta de uploads
 RUN mkdir -p uploads/vouchers uploads/prizes
