@@ -32,14 +32,14 @@ export class RafflesService {
 
     const raffle = this.raffleRepo.create({
       ...dto,
-      drawDate: dto.drawDate ? new Date(dto.drawDate) : null,
+      drawDate: dto.drawDate ? new Date(dto.drawDate) : undefined,
       packages,
       blessedCount,
       blessedPrize,
-      prizeImage: prizeImagePath || null,
+      prizeImage: prizeImagePath || undefined,
       status: RaffleStatus.OPEN,
     });
-    const saved = await this.raffleRepo.save(raffle);
+    const saved = await this.raffleRepo.save(raffle) as Raffle;
 
     const allNumbers = Array.from({ length: 10000 }, (_, i) => i.toString().padStart(4, '0'));
     const shuffled = [...allNumbers].sort(() => Math.random() - 0.5);

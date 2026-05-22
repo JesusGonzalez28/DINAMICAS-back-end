@@ -18,7 +18,7 @@ export class Raffle {
   @ApiProperty() @Column() title!: string;
   @ApiProperty() @Column({ type: 'text', nullable: true }) description!: string;
   @ApiProperty() @Column() prize!: string;
-  @ApiProperty() @Column({ nullable: true }) prizeImage!: string; // ruta de la imagen
+  @ApiProperty() @Column({ nullable: true }) prizeImage!: string | null;
   @ApiProperty() @Column({ type: 'decimal', precision: 12, scale: 2, default: 400 }) pricePerNumber!: number;
   @ApiProperty() @Column({ type: 'json', nullable: true }) packages!: { quantity: number; label: string }[] | null;
   @ApiProperty() @Column({ default: 10 }) blessedCount!: number;
