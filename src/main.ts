@@ -28,7 +28,13 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.enableCors();
+  app.enableCors({
+  origin: [
+    'https://front-end-gh51.onrender.com',
+    'http://localhost:5173',
+  ],
+  credentials: true,
+});
 
   const config = new DocumentBuilder()
     .setTitle('API de Rifas - Dinámicas Los Hermanos')
