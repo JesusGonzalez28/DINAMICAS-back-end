@@ -33,7 +33,6 @@ export class PurchasesService {
       minimumPurchase: MIN_TICKETS,
       minimumTotal: MIN_TICKETS * TICKET_PRICE,
       packages: PACKAGES,
-      // Info de pago Nequi
       payment: {
         method: 'Nequi',
         number: process.env.NEQUI_NUMBER || '3126324715',
@@ -49,7 +48,7 @@ export class PurchasesService {
       throw new BadRequestException('Esta rifa no está abierta para compras');
     }
 
-    const totalAmount = dto.quantity * TICKET_PRICE;
+    const totalAmount = dto.quantity * Number(raffle.pricePerNumber || TICKET_PRICE);
 
     return this.dataSource.transaction(async (manager) => {
       const availableTickets = await manager
@@ -89,7 +88,7 @@ export class PurchasesService {
         message: 'Números reservados. Ahora realiza el pago y sube el comprobante.',
         purchase: savedPurchase,
         quantity: dto.quantity,
-        pricePerNumber: TICKET_PRICE,
+        pricePerNumber: raffle.pricePerNumber,
         totalAmount,
         totalFormatted: `$${totalAmount.toLocaleString('es-CO')} COP`,
         payment: {
@@ -101,7 +100,6 @@ export class PurchasesService {
     });
   }
 
-  // Cliente sube el comprobante de pago
   async uploadVoucher(purchaseId: string, filePath: string) {
     const purchase = await this.purchaseRepo.findOne({
       where: { id: purchaseId },
@@ -116,8 +114,8 @@ export class PurchasesService {
     purchase.status = PaymentStatus.REVIEW;
     await this.purchaseRepo.save(purchase);
 
-    // Notificar al admin
-    await this.mailService.sendComprobantNotification(purchase, purchase.raffle?.title || 'Rifa');
+    // Notificar al admin (sin await para no bloquear)
+    this.mailService.sendComprobantNotification(purchase, purchase.raffle?.title || 'Rifa');
 
     return {
       message: 'Comprobante recibido. El administrador revisará tu pago y recibirás tus números por email.',
@@ -126,7 +124,6 @@ export class PurchasesService {
     };
   }
 
-  // Admin aprueba la compra → envía números al cliente
   async approvePurchase(purchaseId: string) {
     const purchase = await this.purchaseRepo.findOne({
       where: { id: purchaseId },
@@ -142,15 +139,14 @@ export class PurchasesService {
     purchase.paymentProvider = 'Nequi';
     await this.purchaseRepo.save(purchase);
 
-    // Obtener los números asignados
     const tickets = await this.ticketRepo.find({
       where: { purchaseId },
       select: ['number', 'isBlessed'],
       order: { number: 'ASC' },
     });
 
-    // Enviar números al cliente por email (con info de bendecidos)
-    await this.mailService.sendNumbersToClient(
+    // Enviar email sin await para no bloquear la respuesta
+    this.mailService.sendNumbersToClient(
       purchase,
       tickets,
       purchase.raffle?.title || 'Rifa',
@@ -161,11 +157,10 @@ export class PurchasesService {
     return {
       message: 'Compra aprobada. Los números fueron enviados al cliente por email.',
       purchase,
-      numbers,
+      numbers: tickets,
     };
   }
 
-  // Admin rechaza la compra
   async rejectPurchase(purchaseId: string) {
     return this.dataSource.transaction(async (manager) => {
       const purchase = await manager.findOne(Purchase, {
@@ -176,13 +171,12 @@ export class PurchasesService {
         throw new BadRequestException('No se puede rechazar una compra ya aprobada');
       }
 
-      // Liberar los tickets
       await manager.update(Ticket, { purchaseId }, { purchaseId: null });
       purchase.status = PaymentStatus.FAILED;
       await manager.save(Purchase, purchase);
 
-      // Notificar al cliente
-      await this.mailService.sendRejectionToClient(purchase);
+      // Notificar al cliente sin await
+      this.mailService.sendRejectionToClient(purchase);
 
       return { message: 'Compra rechazada. Números liberados y cliente notificado.' };
     });
@@ -194,7 +188,6 @@ export class PurchasesService {
       order: { createdAt: 'DESC' },
     });
 
-    // Marcar cuáles compras tienen números bendecidos
     const result = await Promise.all(
       purchases.map(async (p) => {
         const blessedCount = await this.ticketRepo.count({
