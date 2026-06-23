@@ -8,8 +8,19 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: false });
   const logger = new Logger('Bootstrap');
+
+  // Middleware CORS manual
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send();
+    }
+    next();
+  });
 
   const uploadsDir = join(process.cwd(), 'uploads', 'vouchers');
   if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true });
@@ -27,14 +38,6 @@ async function bootstrap() {
 
   app.useGlobalFilters(new AllExceptionsFilter());
 
- app.enableCors({
-  origin: 'https://dinamicas-production.up.railway.app',
-  credentials: true,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  allowedHeaders: 'Content-Type,Authorization,Accept',
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-});
   const config = new DocumentBuilder()
     .setTitle('API de Rifas - Dinámicas Los Hermanos')
     .setDescription('Backend para gestión de rifas.')
