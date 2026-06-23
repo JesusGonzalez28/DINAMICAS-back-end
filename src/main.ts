@@ -27,14 +27,13 @@ async function bootstrap() {
 
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  app.enableCors({
-  origin: [
-    'https://dinamicas-production.up.railway.app',
-    'http://localhost:5173',
-  ],
+ app.enableCors({
+  origin: 'https://dinamicas-production.up.railway.app',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: 'Content-Type,Authorization,Accept',
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 });
   const config = new DocumentBuilder()
     .setTitle('API de Rifas - Dinámicas Los Hermanos')
