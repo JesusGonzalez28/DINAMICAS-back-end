@@ -28,10 +28,14 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   app.enableCors({
-    origin: '*',
-    credentials: true,
-  });
-
+  origin: [
+    'https://dinamicas-production.up.railway.app',
+    'http://localhost:5173',
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+});
   const config = new DocumentBuilder()
     .setTitle('API de Rifas - Dinámicas Los Hermanos')
     .setDescription('Backend para gestión de rifas.')
