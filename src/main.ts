@@ -28,13 +28,19 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.enableCors({
-  origin: [
-    'https://front-end-gh51.onrender.com',
+
+  // CORS: el dominio del frontend se toma de la variable de entorno
+  // FRONTEND_URL para no tener que tocar el código cada vez que cambie.
+  const allowedOrigins = [
     'http://localhost:5173',
-  ],
-  credentials: true,
-});
+    'https://dinamicas-production.up.railway.app',
+    process.env.FRONTEND_URL,
+  ].filter(Boolean);
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('API de Rifas - Dinámicas Los Hermanos')
@@ -53,6 +59,8 @@ async function bootstrap() {
 
   logger.log(`🚀 Servidor: http://localhost:${port}`);
   logger.log(`📖 Swagger:  http://localhost:${port}/docs`);
+  logger.log(`🌐 CORS habilitado para: ${allowedOrigins.join(', ')}`);
+  logger.log(`✅✅✅ VERSION-CHECK-12345 ✅✅✅`);
 }
 
 bootstrap();
