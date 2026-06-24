@@ -11,11 +11,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
 
-  // Crear carpeta de uploads si no existe
   const uploadsDir = join(process.cwd(), 'uploads', 'vouchers');
   if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true });
 
-  // Servir archivos estáticos (comprobantes)
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   app.useGlobalPipes(
@@ -29,8 +27,6 @@ async function bootstrap() {
 
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // CORS: el dominio del frontend se toma de la variable de entorno
-  // FRONTEND_URL para no tener que tocar el código cada vez que cambie.
   const allowedOrigins = [
     'http://localhost:5173',
     'https://dinamicas-production.up.railway.app',
