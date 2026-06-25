@@ -1,26 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Resend } from 'resend';
+import * as Brevo from '@getbrevo/brevo';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private resend: Resend;
-  private fromAddress: string;
+  private apiInstance: Brevo.TransactionalEmailsApi;
+  private senderName: string;
+  private senderEmail: string;
 
   constructor() {
-    this.resend = new Resend(process.env.RESEND_API_KEY);
-    // Mientras no tengas un dominio verificado en Resend, debes usar
-    // el remitente de pruebas: onboarding@resend.dev
-    this.fromAddress = process.env.MAIL_FROM || 'onboarding@resend.dev';
+    this.apiInstance = new Brevo.TransactionalEmailsApi();
+    (this.apiInstance as any).authentications.apiKey.apiKey = process.env.BREVO_API_KEY;
+    this.senderName = process.env.MAIL_FROM_NAME || 'Dinámicas Los Hermanos';
+    this.senderEmail = process.env.MAIL_FROM_EMAIL || process.env.ADMIN_EMAIL || '';
   }
 
   async sendComprobantNotification(purchase: any, raffleTitle: string) {
     try {
-      const { error } = await this.resend.emails.send({
-        from: this.fromAddress,
-        to: process.env.ADMIN_EMAIL!,
-        subject: `🎟️ Nuevo comprobante - ${purchase.buyerName}`,
-        html: `
+      const email = new Brevo.SendSmtpEmail();
+      email.sender = { name: this.senderName, email: this.senderEmail };
+      email.to = [{ email: process.env.ADMIN_EMAIL! }];
+      email.subject = `🎟️ Nuevo comprobante - ${purchase.buyerName}`;
+      email.htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #CC0000; padding: 24px; text-align: center;">
               <h1 style="color: white; margin: 0;">DINÁMICAS LOS HERMANOS</h1>
@@ -42,15 +43,12 @@ export class MailService {
               </div>
             </div>
           </div>
-        `,
-      });
-      if (error) {
-        this.logger.error('Error enviando email al admin:', error);
-      } else {
-        this.logger.log(`Email de notificación enviado al admin para compra ${purchase.id}`);
-      }
-    } catch (err) {
-      this.logger.error('Error enviando email al admin:', err);
+        `;
+
+      await this.apiInstance.sendTransacEmail(email);
+      this.logger.log(`Email de notificación enviado al admin para compra ${purchase.id}`);
+    } catch (err: any) {
+      this.logger.error('Error enviando email al admin:', err?.body || err);
     }
   }
 
@@ -82,13 +80,13 @@ export class MailService {
       `
         : '';
 
-      const { error } = await this.resend.emails.send({
-        from: this.fromAddress,
-        to: purchase.buyerEmail,
-        subject: hasBlessedNumbers
-          ? `⭐ ¡GANASTE UN NÚMERO BENDECIDO! - Dinámicas Los Hermanos`
-          : `🎉 ¡Tus números de la rifa! - Dinámicas Los Hermanos`,
-        html: `
+      const email = new Brevo.SendSmtpEmail();
+      email.sender = { name: this.senderName, email: this.senderEmail };
+      email.to = [{ email: purchase.buyerEmail, name: purchase.buyerName }];
+      email.subject = hasBlessedNumbers
+        ? `⭐ ¡GANASTE UN NÚMERO BENDECIDO! - Dinámicas Los Hermanos`
+        : `🎉 ¡Tus números de la rifa! - Dinámicas Los Hermanos`;
+      email.htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #CC0000; padding: 24px; text-align: center;">
               <h1 style="color: white; margin: 0;">DINÁMICAS LOS HERMANOS</h1>
@@ -113,26 +111,22 @@ export class MailService {
               <p style="color: #666; font-size: 12px; margin-top: 20px; text-align: center;">¡Mucha suerte! · Dinámicas Los Hermanos</p>
             </div>
           </div>
-        `,
-      });
+        `;
 
-      if (error) {
-        this.logger.error('Error enviando email al cliente:', error);
-      } else {
-        this.logger.log(`Email enviado a ${purchase.buyerEmail} — bendecidos: ${blessedTickets.length}`);
-      }
-    } catch (err) {
-      this.logger.error('Error enviando email al cliente:', err);
+      await this.apiInstance.sendTransacEmail(email);
+      this.logger.log(`Email enviado a ${purchase.buyerEmail} — bendecidos: ${blessedTickets.length}`);
+    } catch (err: any) {
+      this.logger.error('Error enviando email al cliente:', err?.body || err);
     }
   }
 
   async sendRejectionToClient(purchase: any) {
     try {
-      const { error } = await this.resend.emails.send({
-        from: this.fromAddress,
-        to: purchase.buyerEmail,
-        subject: `❌ Comprobante no aprobado - Dinámicas Los Hermanos`,
-        html: `
+      const email = new Brevo.SendSmtpEmail();
+      email.sender = { name: this.senderName, email: this.senderEmail };
+      email.to = [{ email: purchase.buyerEmail, name: purchase.buyerName }];
+      email.subject = `❌ Comprobante no aprobado - Dinámicas Los Hermanos`;
+      email.htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #CC0000; padding: 24px; text-align: center;">
               <h1 style="color: white; margin: 0;">DINÁMICAS LOS HERMANOS</h1>
@@ -143,13 +137,11 @@ export class MailService {
               <p style="color: #666; font-size: 12px;">ID: ${purchase.id}</p>
             </div>
           </div>
-        `,
-      });
-      if (error) {
-        this.logger.error('Error enviando rechazo:', error);
-      }
-    } catch (err) {
-      this.logger.error('Error enviando rechazo:', err);
+        `;
+
+      await this.apiInstance.sendTransacEmail(email);
+    } catch (err: any) {
+      this.logger.error('Error enviando rechazo:', err?.body || err);
     }
   }
 }
