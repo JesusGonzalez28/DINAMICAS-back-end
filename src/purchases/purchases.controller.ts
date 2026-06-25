@@ -130,4 +130,25 @@ export class PurchasesController {
   cancel(@Param('purchaseId', ParseUUIDPipe) purchaseId: string) {
     return this.purchasesService.cancelPurchase(purchaseId);
   }
+
+  @Get('raffles/:raffleId/purchases-stats/top-buyers')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Top de compradores por cantidad de números, de una rifa' })
+  getTopBuyers(@Param('raffleId', ParseUUIDPipe) raffleId: string) {
+    return this.purchasesService.getTopBuyers(raffleId);
+  }
+
+  @Get('raffles/:raffleId/purchases-stats/find-number/:number')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Buscar a qué comprador pertenece un número' })
+  findTicketOwner(
+    @Param('raffleId', ParseUUIDPipe) raffleId: string,
+    @Param('number') number: string,
+  ) {
+    return this.purchasesService.findTicketOwner(raffleId, number);
+  }
 }

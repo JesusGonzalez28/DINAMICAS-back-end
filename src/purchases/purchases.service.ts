@@ -220,4 +220,83 @@ export class PurchasesService {
       return manager.save(Purchase, purchase);
     });
   }
+
+  /**
+   * [Admin] Top de compradores de una rifa, agrupados por correo del comprador.
+   * Suma la cantidad de números (tickets) de TODAS sus compras sin importar el estado.
+   */
+  async getTopBuyers(raffleId: string, limit = 20) {
+    const raffle = await this.raffleRepo.findOne({ where: { id: raffleId } });
+    if (!raffle) throw new NotFoundException('Rifa no encontrada');
+
+    const rows = await this.purchaseRepo
+      .createQueryBuilder('purchase')
+      .select('purchase.buyerEmail', 'buyerEmail')
+      .addSelect('purchase.buyerName', 'buyerName')
+      .addSelect('purchase.buyerPhone', 'buyerPhone')
+      .addSelect('COUNT(purchase.id)', 'purchasesCount')
+      .addSelect('SUM(purchase.quantity)', 'totalNumbers')
+      .addSelect('SUM(purchase.totalAmount)', 'totalSpent')
+      .where('purchase.raffleId = :raffleId', { raffleId })
+      .groupBy('purchase.buyerEmail')
+      .addGroupBy('purchase.buyerName')
+      .addGroupBy('purchase.buyerPhone')
+      .orderBy('totalNumbers', 'DESC')
+      .limit(limit)
+      .getRawMany();
+
+    return rows.map((r, index) => ({
+      rank: index + 1,
+      buyerName: r.buyerName,
+      buyerEmail: r.buyerEmail,
+      buyerPhone: r.buyerPhone,
+      purchasesCount: Number(r.purchasesCount),
+      totalNumbers: Number(r.totalNumbers),
+      totalSpent: Number(r.totalSpent),
+    }));
+  }
+
+  /**
+   * [Admin] Busca a qué comprador pertenece un número específico dentro de una rifa.
+   * Si el número no ha sido asignado a ninguna compra, retorna found: false.
+   */
+  async findTicketOwner(raffleId: string, number: string) {
+    const raffle = await this.raffleRepo.findOne({ where: { id: raffleId } });
+    if (!raffle) throw new NotFoundException('Rifa no encontrada');
+
+    const ticket = await this.ticketRepo.findOne({
+      where: { raffleId, number },
+      relations: ['purchase'],
+    });
+
+    if (!ticket) {
+      throw new NotFoundException(`El número ${number} no existe en esta rifa`);
+    }
+
+    if (!ticket.purchaseId || !ticket.purchase) {
+      return {
+        found: false,
+        number: ticket.number,
+        isBlessed: ticket.isBlessed,
+        message: 'Este número aún no ha sido comprado por nadie',
+      };
+    }
+
+    return {
+      found: true,
+      number: ticket.number,
+      isBlessed: ticket.isBlessed,
+      purchase: {
+        id: ticket.purchase.id,
+        status: ticket.purchase.status,
+        buyerName: ticket.purchase.buyerName,
+        buyerEmail: ticket.purchase.buyerEmail,
+        buyerPhone: ticket.purchase.buyerPhone,
+        buyerCity: ticket.purchase.buyerCity,
+        quantity: ticket.purchase.quantity,
+        totalAmount: ticket.purchase.totalAmount,
+        createdAt: ticket.purchase.createdAt,
+      },
+    };
+  }
 }
