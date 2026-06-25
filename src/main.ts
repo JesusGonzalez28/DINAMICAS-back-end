@@ -31,11 +31,13 @@ async function bootstrap() {
 
   // CORS: el dominio del frontend se toma de la variable de entorno
   // FRONTEND_URL para no tener que tocar el código cada vez que cambie.
-  const allowedOrigins = [
+  const allowedOrigins: (string | RegExp)[] = [
     'http://localhost:5173',
     'https://dinamicas-production.up.railway.app',
-    process.env.FRONTEND_URL,
-  ].filter(Boolean);
+  ];
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
 
   app.enableCors({
     origin: allowedOrigins,
