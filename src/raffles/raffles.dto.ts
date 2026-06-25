@@ -4,7 +4,7 @@ import {
   IsDateString, IsOptional, IsEnum, IsArray,
   ValidateNested, Min,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Type, Transform, plainToInstance } from 'class-transformer';
 import { RaffleStatus } from '../entities/raffle.entity';
 
 export class PackageDto {
@@ -29,10 +29,12 @@ export class CreateRaffleDto {
   @ApiPropertyOptional({ type: [PackageDto] })
   @IsOptional()
   @Transform(({ value }) => {
+    let parsed = value;
     if (typeof value === 'string') {
-      try { return JSON.parse(value); } catch { return value; }
+      try { parsed = JSON.parse(value); } catch { return value; }
     }
-    return value;
+    if (!Array.isArray(parsed)) return parsed;
+    return parsed.map((item) => plainToInstance(PackageDto, item));
   })
   @IsArray() @ValidateNested({ each: true }) @Type(() => PackageDto)
   packages?: PackageDto[];
@@ -63,10 +65,12 @@ export class UpdateRaffleDto {
   @ApiPropertyOptional({ type: [PackageDto] })
   @IsOptional()
   @Transform(({ value }) => {
+    let parsed = value;
     if (typeof value === 'string') {
-      try { return JSON.parse(value); } catch { return value; }
+      try { parsed = JSON.parse(value); } catch { return value; }
     }
-    return value;
+    if (!Array.isArray(parsed)) return parsed;
+    return parsed.map((item) => plainToInstance(PackageDto, item));
   })
   @IsArray() @ValidateNested({ each: true }) @Type(() => PackageDto)
   packages?: PackageDto[];
