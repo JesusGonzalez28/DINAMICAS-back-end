@@ -69,3 +69,14 @@ export class UpdatePurchaseStatusDto {
   @IsEnum(PaymentStatus)
   status!: PaymentStatus;
 }
+
+export class CheckMyNumbersDto {
+  @ApiProperty({ example: 'juan@email.com' })
+  @IsEmail({}, { message: 'Email inválido' })
+  email!: string;
+
+  @ApiProperty({ example: '+573001234567' })
+  @IsString()
+  @IsNotEmpty({ message: 'El teléfono es requerido' })
+  phone!: string;
+}

@@ -23,7 +23,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AuthGuard } from '@nestjs/passport';
 import { PurchasesService } from './purchases.service';
-import { CreatePurchaseDto } from './purchases.dto';
+import { CreatePurchaseDto, CheckMyNumbersDto } from './purchases.dto';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../entities/user.entity';
@@ -48,6 +48,12 @@ export class PurchasesController {
   @ApiOperation({ summary: 'Ver paquetes y datos de pago Nequi' })
   getPackages() {
     return this.purchasesService.getPackages();
+  }
+
+  @Post('purchases/check-my-numbers')
+  @ApiOperation({ summary: '[Público] Consultar mis números con correo y teléfono' })
+  checkMyNumbers(@Body() dto: CheckMyNumbersDto) {
+    return this.purchasesService.checkMyNumbers(dto.email, dto.phone);
   }
 
   @Post('raffles/:raffleId/purchases')

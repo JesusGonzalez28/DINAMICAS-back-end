@@ -5,6 +5,7 @@ import { databaseConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
 import { RafflesModule } from './raffles/raffles.module';
 import { PurchasesModule } from './purchases/purchases.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PurchasesModule } from './purchases/purchases.module';
     AuthModule,
     RafflesModule,
     PurchasesModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}

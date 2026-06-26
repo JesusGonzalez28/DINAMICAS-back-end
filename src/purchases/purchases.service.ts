@@ -10,6 +10,7 @@ import { Ticket } from '../entities/ticket.entity';
 import { Raffle, RaffleStatus } from '../entities/raffle.entity';
 import { CreatePurchaseDto, TICKET_PRICE, MIN_TICKETS, PACKAGES } from './purchases.dto';
 import { MailService } from '../mail/mail.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class PurchasesService {
@@ -25,9 +26,11 @@ export class PurchasesService {
 
     private dataSource: DataSource,
     private mailService: MailService,
+    private settingsService: SettingsService,
   ) {}
 
-  getPackages() {
+  async getPackages() {
+    const settings = await this.settingsService.getPublic();
     return {
       pricePerNumber: TICKET_PRICE,
       minimumPurchase: MIN_TICKETS,
@@ -35,8 +38,9 @@ export class PurchasesService {
       packages: PACKAGES,
       payment: {
         method: 'Nequi',
-        number: process.env.NEQUI_NUMBER || '3126324715',
-        name: process.env.NEQUI_NAME || 'Jesus David Gonzalez Tapias',
+        number: settings.nequiNumber,
+        name: settings.nequiName,
+        qrImage: settings.qrImage,
       },
     };
   }
@@ -197,6 +201,46 @@ export class PurchasesService {
       })
     );
     return result;
+  }
+
+  /**
+   * [Público] El cliente consulta sus números usando correo + teléfono.
+   * Busca en TODAS las rifas (no solo una), y solo en compras aprobadas (PAID),
+   * ya que son las que realmente tienen números confirmados y enviados.
+   */
+  async checkMyNumbers(email: string, phone: string) {
+    const normalizedPhone = phone.replace(/\s+/g, '').trim();
+
+    const purchases = await this.purchaseRepo
+      .createQueryBuilder('purchase')
+      .leftJoinAndSelect('purchase.tickets', 'tickets')
+      .leftJoinAndSelect('purchase.raffle', 'raffle')
+      .where('LOWER(purchase.buyerEmail) = LOWER(:email)', { email: email.trim() })
+      .andWhere('purchase.status = :status', { status: PaymentStatus.PAID })
+      .getMany();
+
+    const matched = purchases.filter(
+      (p) => p.buyerPhone.replace(/\s+/g, '') === normalizedPhone,
+    );
+
+    if (matched.length === 0) {
+      return { found: false, purchases: [] };
+    }
+
+    return {
+      found: true,
+      purchases: matched.map((p) => ({
+        id: p.id,
+        raffleId: p.raffleId,
+        raffleTitle: p.raffle.title,
+        raffleStatus: p.raffle.status,
+        prize: p.raffle.prize,
+        quantity: p.quantity,
+        totalAmount: p.totalAmount,
+        createdAt: p.createdAt,
+        numbers: p.tickets.map((t) => ({ number: t.number, isBlessed: t.isBlessed })),
+      })),
+    };
   }
 
   async findOne(id: string) {
