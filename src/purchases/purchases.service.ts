@@ -343,4 +343,63 @@ export class PurchasesService {
       },
     };
   }
+
+  /**
+   * [Admin] Top de compradores de una rifa filtrado por día.
+   * Solo cuenta compras APROBADAS (PAID), agrupadas por comprador,
+   * ordenadas de mayor a menor por total de números comprados ese día.
+   */
+  async getTopBuyersByDay(raffleId: string, date: string) {
+    const raffle = await this.raffleRepo.findOne({ where: { id: raffleId } });
+    if (!raffle) throw new NotFoundException('Rifa no encontrada');
+
+    // Construir rango del día completo en timezone -05:00
+    const startOfDay = `${date} 00:00:00`;
+    const endOfDay = `${date} 23:59:59`;
+
+    const purchases = await this.purchaseRepo
+      .createQueryBuilder('purchase')
+      .leftJoinAndSelect('purchase.tickets', 'tickets')
+      .where('purchase.raffleId = :raffleId', { raffleId })
+      .andWhere('purchase.status = :status', { status: PaymentStatus.PAID })
+      .andWhere('purchase.createdAt >= :start', { start: startOfDay })
+      .andWhere('purchase.createdAt <= :end', { end: endOfDay })
+      .orderBy('purchase.totalAmount', 'DESC')
+      .getMany();
+
+    if (purchases.length === 0) {
+      return { date, total: 0, purchases: [] };
+    }
+
+    // Agrupar por comprador (email)
+    const buyerMap = new Map<string, any>();
+    for (const p of purchases) {
+      const key = p.buyerEmail.toLowerCase();
+      if (!buyerMap.has(key)) {
+        buyerMap.set(key, {
+          buyerName: p.buyerName,
+          buyerEmail: p.buyerEmail,
+          buyerPhone: p.buyerPhone,
+          buyerCity: p.buyerCity,
+          totalNumbers: 0,
+          totalSpent: 0,
+          numbers: [],
+          purchases: [],
+        });
+      }
+      const buyer = buyerMap.get(key);
+      buyer.totalNumbers += p.quantity;
+      buyer.totalSpent += Number(p.totalAmount);
+      buyer.numbers.push(...p.tickets.map((t) => ({ number: t.number, isBlessed: t.isBlessed })));
+      buyer.purchases.push({ id: p.id, quantity: p.quantity, totalAmount: p.totalAmount, createdAt: p.createdAt });
+    }
+
+    const ranked = Array.from(buyerMap.values())
+      .sort((a, b) => b.totalNumbers - a.totalNumbers)
+      .map((b, i) => ({ rank: i + 1, ...b }));
+
+    const grandTotal = ranked.reduce((sum, b) => sum + b.totalSpent, 0);
+
+    return { date, grandTotal, purchases: ranked };
+  }
 }

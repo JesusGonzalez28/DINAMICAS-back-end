@@ -5,6 +5,7 @@ import {
   Patch,
   Param,
   Body,
+  Query,
   UseGuards,
   ParseUUIDPipe,
   UseInterceptors,
@@ -144,6 +145,21 @@ export class PurchasesController {
   @ApiOperation({ summary: '[Admin] Top de compradores por cantidad de números, de una rifa' })
   getTopBuyers(@Param('raffleId', ParseUUIDPipe) raffleId: string) {
     return this.purchasesService.getTopBuyers(raffleId);
+  }
+
+  @Get('raffles/:raffleId/purchases-stats/top-buyers-by-day')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Top de compradores por día (solo PAID), con números y costo total' })
+  getTopBuyersByDay(
+    @Param('raffleId', ParseUUIDPipe) raffleId: string,
+    @Query('date') date: string,
+  ) {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new BadRequestException('Parámetro date requerido en formato YYYY-MM-DD');
+    }
+    return this.purchasesService.getTopBuyersByDay(raffleId, date);
   }
 
   @Get('raffles/:raffleId/purchases-stats/find-number/:number')
