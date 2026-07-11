@@ -74,7 +74,7 @@ export class PurchasesService {
         raffleId,
         buyerName: dto.buyerName,
         buyerPhone: dto.buyerPhone,
-        buyerEmail: dto.buyerEmail,
+        buyerEmail: dto.buyerEmail.trim().toLowerCase(),
         buyerCity: dto.buyerCity,
         quantity: dto.quantity,
         totalAmount,
@@ -213,10 +213,13 @@ export class PurchasesService {
    * y devuelve sus datos para autocompletar el formulario.
    */
   async lookupBuyer(email: string) {
-    const purchase = await this.purchaseRepo.findOne({
-      where: { buyerEmail: email.toLowerCase().trim() },
-      order: { createdAt: 'DESC' },
-    });
+    const purchase = await this.purchaseRepo
+      .createQueryBuilder('purchase')
+      .where('LOWER(TRIM(purchase.buyerEmail)) = LOWER(TRIM(:email))', {
+        email: email.trim(),
+      })
+      .orderBy('purchase.createdAt', 'DESC')
+      .getOne();
 
     if (!purchase) return { found: false };
 
