@@ -41,6 +41,7 @@ export class PurchasesService {
         number: settings.nequiNumber,
         name: settings.nequiName,
         qrImage: settings.qrImage,
+        bancolombiaAccount: settings.bancolombiaAccount,
       },
     };
   }

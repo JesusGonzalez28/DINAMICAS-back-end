@@ -25,6 +25,7 @@ export class SettingsService {
         nequiNumber: process.env.NEQUI_NUMBER || '3126324715',
         nequiName: process.env.NEQUI_NAME || 'Jesus David Gonzalez Tapias',
         qrImage: null,
+        bancolombiaAccount: process.env.BANCOLOMBIA_ACCOUNT || '677-678822.78',
       });
       await this.settingsRepo.save(settings);
     }
@@ -37,6 +38,7 @@ export class SettingsService {
       nequiNumber: settings.nequiNumber,
       nequiName: settings.nequiName,
       qrImage: settings.qrImage,
+      bancolombiaAccount: settings.bancolombiaAccount,
     };
   }
 
@@ -44,6 +46,7 @@ export class SettingsService {
     const settings = await this.getOrCreate();
     if (dto.nequiNumber !== undefined) settings.nequiNumber = dto.nequiNumber;
     if (dto.nequiName !== undefined) settings.nequiName = dto.nequiName;
+    if (dto.bancolombiaAccount !== undefined) settings.bancolombiaAccount = dto.bancolombiaAccount;
     if (qrPath) settings.qrImage = qrPath;
     return this.settingsRepo.save(settings);
   }
