@@ -57,6 +57,13 @@ export class PurchasesController {
     return this.purchasesService.checkMyNumbers(dto.email, dto.phone);
   }
 
+  @Get('purchases/lookup-buyer')
+  @ApiOperation({ summary: '[Público] Autocompletar datos del comprador por email' })
+  lookupBuyer(@Query('email') email: string) {
+    if (!email || !email.includes('@')) return { found: false };
+    return this.purchasesService.lookupBuyer(email);
+  }
+
   @Post('raffles/:raffleId/purchases')
   @ApiOperation({ summary: 'Reservar números (sin pago aún)' })
   @ApiResponse({ status: 201, description: 'Números reservados, procede a pagar' })

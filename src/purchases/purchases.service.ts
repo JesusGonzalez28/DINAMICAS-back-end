@@ -208,6 +208,26 @@ export class PurchasesService {
    * Busca en TODAS las rifas (no solo una), y solo en compras aprobadas (PAID),
    * ya que son las que realmente tienen números confirmados y enviados.
    */
+  /**
+   * [Público] Busca si un email ya tiene compras previas en cualquier rifa
+   * y devuelve sus datos para autocompletar el formulario.
+   */
+  async lookupBuyer(email: string) {
+    const purchase = await this.purchaseRepo.findOne({
+      where: { buyerEmail: email.toLowerCase().trim() },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!purchase) return { found: false };
+
+    return {
+      found: true,
+      buyerName: purchase.buyerName,
+      buyerPhone: purchase.buyerPhone,
+      buyerCity: purchase.buyerCity,
+    };
+  }
+
   async checkMyNumbers(email: string, phone: string) {
     const normalizedPhone = phone.replace(/\s+/g, '').trim();
 
