@@ -41,7 +41,6 @@ export class PurchasesService {
         number: settings.nequiNumber,
         name: settings.nequiName,
         qrImage: settings.qrImage,
-        bancolombiaAccount: settings.bancolombiaAccount,
       },
     };
   }
@@ -75,7 +74,7 @@ export class PurchasesService {
         raffleId,
         buyerName: dto.buyerName,
         buyerPhone: dto.buyerPhone,
-        buyerEmail: dto.buyerEmail.trim().toLowerCase(),
+        buyerEmail: dto.buyerEmail,
         buyerCity: dto.buyerCity,
         quantity: dto.quantity,
         totalAmount,
@@ -214,13 +213,10 @@ export class PurchasesService {
    * y devuelve sus datos para autocompletar el formulario.
    */
   async lookupBuyer(email: string) {
-    const purchase = await this.purchaseRepo
-      .createQueryBuilder('purchase')
-      .where('LOWER(TRIM(purchase.buyerEmail)) = LOWER(TRIM(:email))', {
-        email: email.trim(),
-      })
-      .orderBy('purchase.createdAt', 'DESC')
-      .getOne();
+    const purchase = await this.purchaseRepo.findOne({
+      where: { buyerEmail: email.toLowerCase().trim() },
+      order: { createdAt: 'DESC' },
+    });
 
     if (!purchase) return { found: false };
 

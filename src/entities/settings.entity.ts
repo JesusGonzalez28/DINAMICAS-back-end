@@ -23,10 +23,6 @@ export class Settings {
   @Column({ type: 'varchar', nullable: true })
   qrImage!: string | null;
 
-  @ApiProperty()
-  @Column({ default: '677-678822.78' })
-  bancolombiaAccount!: string;
-
   @UpdateDateColumn()
   updatedAt!: Date;
 }

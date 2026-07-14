@@ -13,10 +13,4 @@ export class UpdateSettingsDto {
   @IsString()
   @IsNotEmpty()
   nequiName?: string;
-
-  @ApiPropertyOptional({ example: '677-678822.78' })
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  bancolombiaAccount?: string;
 }

@@ -48,6 +48,11 @@ export class CreateRaffleDto {
   @Transform(({ value }) => Number(value))
   @IsNumber() @IsPositive() @IsOptional()
   blessedPrize?: number;
+
+  @ApiPropertyOptional({ example: 4, description: 'Número de cifras (2=100 tickets, 3=1000, 4=10000)' })
+  @Transform(({ value }) => Number(value))
+  @IsNumber() @Min(2) @IsOptional()
+  digits?: number;
 }
 
 export class UpdateRaffleDto {

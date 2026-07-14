@@ -25,6 +25,7 @@ export class Raffle {
   @ApiProperty() @Column({ type: 'decimal', precision: 12, scale: 2, default: 50000 }) blessedPrize!: number;
   @ApiProperty() @Column({ type: 'timestamp', nullable: true }) drawDate!: Date | null;
   @ApiProperty() @Column({ default: 10000 }) totalNumbers!: number;
+  @ApiProperty() @Column({ default: 4 }) digits!: number;
   @ApiProperty({ enum: RaffleStatus }) @Column({ type: 'enum', enum: RaffleStatus, default: RaffleStatus.OPEN }) status!: RaffleStatus;
   @CreateDateColumn() createdAt!: Date;
   @UpdateDateColumn() updatedAt!: Date;

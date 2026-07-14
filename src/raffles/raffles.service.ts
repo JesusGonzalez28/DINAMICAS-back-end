@@ -23,6 +23,8 @@ export class RafflesService {
   async create(dto: CreateRaffleDto, prizeImagePath?: string) {
     const blessedCount = dto.blessedCount ?? 10;
     const blessedPrize = dto.blessedPrize ?? 50000;
+    const digits = dto.digits && dto.digits >= 2 ? Math.floor(dto.digits) : 4;
+    const totalTickets = Math.pow(10, digits); // 2→100, 3→1000, 4→10000
 
     // packages puede venir como string JSON desde FormData
     let packages = dto.packages || DEFAULT_PACKAGES;
@@ -36,12 +38,16 @@ export class RafflesService {
       packages,
       blessedCount,
       blessedPrize,
+      digits,
+      totalNumbers: totalTickets,
       prizeImage: prizeImagePath || undefined,
       status: RaffleStatus.OPEN,
     });
     const saved = await this.raffleRepo.save(raffle) as Raffle;
 
-    const allNumbers = Array.from({ length: 10000 }, (_, i) => i.toString().padStart(4, '0'));
+    const allNumbers = Array.from({ length: totalTickets }, (_, i) =>
+      i.toString().padStart(digits, '0')
+    );
     const shuffled = [...allNumbers].sort(() => Math.random() - 0.5);
     const blessedNumbers = new Set(shuffled.slice(0, blessedCount));
 
@@ -56,7 +62,7 @@ export class RafflesService {
       await this.ticketRepo.insert(tickets.slice(i, i + chunkSize));
     }
 
-    return { message: 'Rifa creada exitosamente', raffle: saved, totalTickets: 10000, blessedNumbers: blessedCount };
+    return { message: 'Rifa creada exitosamente', raffle: saved, totalTickets, blessedNumbers: blessedCount };
   }
 
   async update(id: string, dto: UpdateRaffleDto, prizeImagePath?: string) {
@@ -97,10 +103,11 @@ export class RafflesService {
   }
 
   async getStats(id: string) {
-    await this.findOne(id);
+    const raffle = await this.findOne(id);
+    const total = raffle.totalNumbers || 10000;
     const sold = await this.ticketRepo.count({ where: { raffleId: id, purchaseId: Not(IsNull()) } });
     const blessedSold = await this.ticketRepo.count({ where: { raffleId: id, isBlessed: true, purchaseId: Not(IsNull()) } });
-    return { totalNumbers: 10000, sold, available: 10000 - sold, percentageSold: Math.round((sold / 10000) * 10000) / 100, blessedSold };
+    return { totalNumbers: total, sold, available: total - sold, percentageSold: Math.round((sold / total) * 10000) / 100, blessedSold };
   }
 
   async getBlessedNumbers(id: string) {
