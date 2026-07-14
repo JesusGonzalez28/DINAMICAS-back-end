@@ -44,7 +44,7 @@ export class CreatePurchaseDto {
   @ApiProperty({ example: 25 })
   @Type(() => Number)
   @IsInt({ message: 'La cantidad debe ser un número entero' })
-  @Min(MIN_TICKETS, { message: `La compra mínima es de ${MIN_TICKETS} números ($${MIN_TICKETS * TICKET_PRICE} COP)` })
+  @Min(1, { message: 'La cantidad debe ser mayor a 0' })
   quantity!: number;
 }
 

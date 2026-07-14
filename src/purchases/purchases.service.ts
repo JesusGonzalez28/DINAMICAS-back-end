@@ -33,8 +33,8 @@ export class PurchasesService {
     const settings = await this.settingsService.getPublic();
     return {
       pricePerNumber: TICKET_PRICE,
-      minimumPurchase: MIN_TICKETS,
-      minimumTotal: MIN_TICKETS * TICKET_PRICE,
+      minimumPurchase: settings.minQuantity,
+      minimumTotal: settings.minQuantity * TICKET_PRICE,
       packages: PACKAGES,
       payment: {
         method: 'Nequi',
@@ -50,6 +50,13 @@ export class PurchasesService {
     if (!raffle) throw new NotFoundException('Rifa no encontrada');
     if (raffle.status !== RaffleStatus.OPEN) {
       throw new BadRequestException('Esta rifa no está abierta para compras');
+    }
+
+    const settings = await this.settingsService.getOrCreate();
+    if (dto.quantity < settings.minQuantity) {
+      throw new BadRequestException(
+        `La compra mínima es de ${settings.minQuantity} números ($${(settings.minQuantity * TICKET_PRICE).toLocaleString('es-CO')} COP)`,
+      );
     }
 
     const totalAmount = dto.quantity * Number(raffle.pricePerNumber || TICKET_PRICE);

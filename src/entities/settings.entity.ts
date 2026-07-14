@@ -23,6 +23,10 @@ export class Settings {
   @Column({ type: 'varchar', nullable: true })
   qrImage!: string | null;
 
+  @ApiProperty()
+  @Column({ type: 'int', default: 25 })
+  minQuantity!: number;
+
   @UpdateDateColumn()
   updatedAt!: Date;
 }
