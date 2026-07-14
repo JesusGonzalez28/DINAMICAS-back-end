@@ -27,6 +27,10 @@ export class Settings {
   @Column({ type: 'int', default: 25 })
   minQuantity!: number;
 
+  @ApiProperty()
+  @Column({ default: '677-678822.78' })
+  bancolombiaAccount!: string;
+
   @UpdateDateColumn()
   updatedAt!: Date;
 }

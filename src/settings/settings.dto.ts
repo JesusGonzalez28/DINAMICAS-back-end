@@ -15,10 +15,16 @@ export class UpdateSettingsDto {
   @IsNotEmpty()
   nequiName?: string;
 
-  @ApiPropertyOptional({ example: 25, description: 'Cantidad mínima de números que un cliente puede comprar' })
+  @ApiPropertyOptional({ example: 25, description: 'Cantidad mínima de números que un cliente puede comprar (ya no se usa; el mínimo real se define por rifa)' })
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'La cantidad mínima debe ser un número entero' })
   @Min(1, { message: 'La cantidad mínima debe ser al menos 1' })
   minQuantity?: number;
+
+  @ApiPropertyOptional({ example: '677-678822.78' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  bancolombiaAccount?: string;
 }

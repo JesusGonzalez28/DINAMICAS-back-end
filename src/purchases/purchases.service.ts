@@ -29,18 +29,40 @@ export class PurchasesService {
     private settingsService: SettingsService,
   ) {}
 
-  async getPackages() {
+  async getPackages(raffleId?: string) {
     const settings = await this.settingsService.getPublic();
+    let packages = PACKAGES;
+    let pricePerNumber = TICKET_PRICE;
+
+    if (raffleId) {
+      const raffle = await this.raffleRepo.findOne({ where: { id: raffleId } });
+      if (raffle) {
+        pricePerNumber = Number(raffle.pricePerNumber || TICKET_PRICE);
+        if (raffle.packages && raffle.packages.length) {
+          packages = raffle.packages.map((p) => ({
+            quantity: p.quantity,
+            label: p.label,
+            total: p.quantity * pricePerNumber,
+          }));
+        }
+      }
+    }
+
+    const minimumPurchase = packages.length
+      ? Math.min(...packages.map((p) => p.quantity))
+      : MIN_TICKETS;
+
     return {
-      pricePerNumber: TICKET_PRICE,
-      minimumPurchase: settings.minQuantity,
-      minimumTotal: settings.minQuantity * TICKET_PRICE,
-      packages: PACKAGES,
+      pricePerNumber,
+      minimumPurchase,
+      minimumTotal: minimumPurchase * pricePerNumber,
+      packages,
       payment: {
         method: 'Nequi',
         number: settings.nequiNumber,
         name: settings.nequiName,
         qrImage: settings.qrImage,
+        bancolombiaAccount: settings.bancolombiaAccount,
       },
     };
   }
@@ -52,14 +74,19 @@ export class PurchasesService {
       throw new BadRequestException('Esta rifa no está abierta para compras');
     }
 
-    const settings = await this.settingsService.getOrCreate();
-    if (dto.quantity < settings.minQuantity) {
+    const minQuantity = raffle.packages && raffle.packages.length
+      ? Math.min(...raffle.packages.map((p) => p.quantity))
+      : MIN_TICKETS;
+
+    if (dto.quantity < minQuantity) {
+      const price = Number(raffle.pricePerNumber || TICKET_PRICE);
       throw new BadRequestException(
-        `La compra mínima es de ${settings.minQuantity} números ($${(settings.minQuantity * TICKET_PRICE).toLocaleString('es-CO')} COP)`,
+        `La compra mínima es de ${minQuantity} números ($${(minQuantity * price).toLocaleString('es-CO')} COP)`,
       );
     }
 
     const totalAmount = dto.quantity * Number(raffle.pricePerNumber || TICKET_PRICE);
+    const settings = await this.settingsService.getPublic();
 
     return this.dataSource.transaction(async (manager) => {
       const availableTickets = await manager
@@ -104,8 +131,10 @@ export class PurchasesService {
         totalFormatted: `$${totalAmount.toLocaleString('es-CO')} COP`,
         payment: {
           method: 'Nequi',
-          number: process.env.NEQUI_NUMBER || '3126324715',
-          name: process.env.NEQUI_NAME || 'Jesus David Gonzalez Tapias',
+          number: settings.nequiNumber,
+          name: settings.nequiName,
+          qrImage: settings.qrImage,
+          bancolombiaAccount: settings.bancolombiaAccount,
         },
       };
     });

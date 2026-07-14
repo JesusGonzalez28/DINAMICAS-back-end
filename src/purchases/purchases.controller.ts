@@ -46,9 +46,9 @@ export class PurchasesController {
   // ── Públicos ───────────────────────────────────────────────────
 
   @Get('packages')
-  @ApiOperation({ summary: 'Ver paquetes y datos de pago Nequi' })
-  getPackages() {
-    return this.purchasesService.getPackages();
+  @ApiOperation({ summary: 'Ver paquetes (de la rifa indicada, o globales) y datos de pago' })
+  getPackages(@Query('raffleId') raffleId?: string) {
+    return this.purchasesService.getPackages(raffleId);
   }
 
   @Post('purchases/check-my-numbers')

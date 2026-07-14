@@ -26,6 +26,7 @@ export class SettingsService {
         nequiName: process.env.NEQUI_NAME || 'Jesus David Gonzalez Tapias',
         qrImage: null,
         minQuantity: process.env.MIN_QUANTITY ? parseInt(process.env.MIN_QUANTITY, 10) : 25,
+        bancolombiaAccount: process.env.BANCOLOMBIA_ACCOUNT || '677-678822.78',
       });
       await this.settingsRepo.save(settings);
     }
@@ -39,6 +40,7 @@ export class SettingsService {
       nequiName: settings.nequiName,
       qrImage: settings.qrImage,
       minQuantity: settings.minQuantity,
+      bancolombiaAccount: settings.bancolombiaAccount,
     };
   }
 
@@ -47,6 +49,7 @@ export class SettingsService {
     if (dto.nequiNumber !== undefined) settings.nequiNumber = dto.nequiNumber;
     if (dto.nequiName !== undefined) settings.nequiName = dto.nequiName;
     if (dto.minQuantity !== undefined) settings.minQuantity = dto.minQuantity;
+    if (dto.bancolombiaAccount !== undefined) settings.bancolombiaAccount = dto.bancolombiaAccount;
     if (qrPath) settings.qrImage = qrPath;
     return this.settingsRepo.save(settings);
   }
